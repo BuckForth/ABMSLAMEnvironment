@@ -1,0 +1,17 @@
+﻿<Properties StartupItem="Assembly-CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\ABM\ABMController.cs">
+    <Files>
+      <File FileName="Assets\Scripts\ABM\ABMMetricChart.cs" Line="77" Column="5" />
+      <File FileName="Assets\Scripts\ABM\AgentABM.cs" Line="45" Column="27" />
+      <File FileName="Assets\Scripts\ABM\ABMController.cs" Line="150" Column="44" />
+      <File FileName="Assets\Scripts\ABM\ABMMapTile.cs" Line="40" Column="46" />
+      <File FileName="Assets\Scripts\MarchingCube\MeshGenerator.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\MarchingCube\Density\NoiseDensity.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

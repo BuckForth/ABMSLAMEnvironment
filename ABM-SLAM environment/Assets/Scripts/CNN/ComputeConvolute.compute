@@ -1,0 +1,370 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+
+StructuredBuffer<float> KernalBuffer;
+RWTexture2D<float4> featureMap;
+RWTexture2D<float4> poolingMap;
+
+StructuredBuffer<float> KernalBufferb;
+RWTexture2D<float4> featureMapb;
+RWTexture2D<float4> poolingMapb;
+
+StructuredBuffer<float> KernalBuffer2;
+RWTexture2D<float4> featureMap2;
+RWTexture2D<float4> poolingMap2;
+RWTexture2D<float4> featureMap5;
+RWTexture2D<float4> poolingMap5;
+
+StructuredBuffer<float> KernalBuffer3;
+RWTexture2D<float4> featureMap3;
+RWTexture2D<float4> poolingMap3;
+RWTexture2D<float4> featureMap6;
+RWTexture2D<float4> poolingMap6;
+
+StructuredBuffer<float> KernalBuffer4;
+RWTexture2D<float4> featureMap4;
+RWTexture2D<float4> poolingMap4;
+RWTexture2D<float4> featureMap7;
+RWTexture2D<float4> poolingMap7;
+
+
+
+
+
+Texture2D<float4> ImageInput;
+
+
+
+
+
+float2 flip;
+
+//https://github.com/G4ND44/computeShaderBlur/blob/master/Assets/Shaders/boxBlur.compute
+//https://www.youtube.com/watch?v=ub7JwtJjRSI
+//https://github.com/Firnox/ShaderStories-EdgeDetection
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+//Convolute Layer 1
+    float4 pixel = float4(0, 0, 0, 0);
+	float4 pixelb = float4(0, 0, 0, 0);
+	float4 pixelc = float4(0, 0, 0, 0);
+
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer[0] * ImageInput[id.xy - int2(-1, 1)];
+    pixel += KernalBuffer[1] * ImageInput[id.xy - int2(0, 1)];
+    pixel += KernalBuffer[2] * ImageInput[id.xy - int2(1, 1)];
+
+	pixel += KernalBuffer[3] * ImageInput[id.xy - int2(-1, 0)];
+	pixel += KernalBuffer[4] * ImageInput[id.xy];
+    pixel += KernalBuffer[5] * ImageInput[id.xy - int2(1, 0)];
+	    
+	pixel += KernalBuffer[6] * ImageInput[id.xy - int2(-1, -1)];
+    pixel += KernalBuffer[7] * ImageInput[id.xy - int2(0, -1)];
+    pixel += KernalBuffer[8] * ImageInput[id.xy - int2(1, -1)];
+
+	pixel *= KernalBuffer[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap[id.xy] = pixel;
+
+	//Then featuremapB
+
+	pixelb += KernalBufferb[0] * ImageInput[id.xy - int2(-1, 1)];
+    pixelb += KernalBufferb[1] * ImageInput[id.xy - int2(0, 1)];
+    pixelb += KernalBufferb[2] * ImageInput[id.xy - int2(1, 1)];
+	
+	pixelb += KernalBufferb[3] * ImageInput[id.xy - int2(-1, 0)];
+	pixelb += KernalBufferb[4] * ImageInput[id.xy];
+    pixelb += KernalBufferb[5] * ImageInput[id.xy - int2(1, 0)];
+
+	pixelb += KernalBufferb[6] * ImageInput[id.xy - int2(-1, -1)];
+    pixelb += KernalBufferb[7] * ImageInput[id.xy - int2(0, -1)];
+    pixelb += KernalBufferb[8] * ImageInput[id.xy - int2(1, -1)];
+		
+	pixelb *= KernalBufferb[9];
+    // Retain the original pixel alpha value.
+    pixelb.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMapb[id.xy] = pixelb;
+
+//Pooling Layer 1
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap[id.xy - int2(-1, 1)], pixel);
+	pixel = max(featureMap[id.xy - int2(0, 1)], pixel);
+	pixel = max(featureMap[id.xy - int2(1, 1)], pixel);
+	pixel = max(featureMap[id.xy - int2(-1, 0)], pixel);
+	pixel = max(featureMap[id.xy], pixel);
+	pixel = max(featureMap[id.xy - int2(1, 0)], pixel);
+    pixel = max(featureMap[id.xy - int2(-1, -1)], pixel);
+	pixel = max(featureMap[id.xy - int2(0, -1)], pixel);
+	pixel = max(featureMap[id.xy - int2(1, -1)], pixel);
+	poolingMap[id.xy/3] = max(pixel,poolingMap[id.xy/3]);
+
+	pixelb = float4(0, 0, 0, 0);
+    pixelb = max(featureMap[id.xy - int2(-1, 1)], pixel);
+	pixelb = max(featureMap[id.xy - int2(0, 1)], pixel);
+	pixelb = max(featureMap[id.xy - int2(1, 1)], pixel);
+	pixelb = max(featureMap[id.xy - int2(-1, 0)], pixel);
+	pixelb = max(featureMap[id.xy], pixel);
+	pixelb = max(featureMap[id.xy - int2(1, 0)], pixel);
+    pixelb = max(featureMap[id.xy - int2(-1, -1)], pixel);
+	pixelb = max(featureMap[id.xy - int2(0, -1)], pixel);
+	pixelb = max(featureMap[id.xy - int2(1, -1)], pixel);
+    // Set the calculated pixel
+    poolingMapb[id.xy/3] = max(pixelb,poolingMap[id.xy/3]);
+
+
+//Convolute Layer 2
+//pooling <--- kernal2
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer2[0] * poolingMap[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer2[1] * poolingMap[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer2[2] * poolingMap[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer2[3] * poolingMap[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer2[4] * poolingMap[(id.xy/3)];
+    pixel += KernalBuffer2[5] * poolingMap[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer2[6] * poolingMap[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer2[7] * poolingMap[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer2[8] * poolingMap[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer2[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap2[(id.xy/3)] = pixel;
+
+//poolingB <--- kernal2
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer2[0] * poolingMapb[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer2[1] * poolingMapb[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer2[2] * poolingMapb[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer2[3] * poolingMapb[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer2[4] * poolingMapb[(id.xy/3)];
+    pixel += KernalBuffer2[5] * poolingMapb[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer2[6] * poolingMapb[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer2[7] * poolingMapb[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer2[8] * poolingMapb[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer2[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap5[(id.xy/3)] = pixel;
+
+//pooling <--- kernal3
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer3[0] * poolingMap[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer3[1] * poolingMap[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer3[2] * poolingMap[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer3[3] * poolingMap[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer3[4] * poolingMap[(id.xy/3)];
+    pixel += KernalBuffer3[5] * poolingMap[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer3[6] * poolingMap[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer3[7] * poolingMap[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer3[8] * poolingMap[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer3[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap3[(id.xy/3)] = pixel;
+
+//poolingB <--- kernal3
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer3[0] * poolingMapb[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer3[1] * poolingMapb[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer3[2] * poolingMapb[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer3[3] * poolingMapb[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer3[4] * poolingMapb[(id.xy/3)];
+    pixel += KernalBuffer3[5] * poolingMapb[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer3[6] * poolingMapb[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer3[7] * poolingMapb[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer3[8] * poolingMapb[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer3[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap6[(id.xy/3)] = pixel;
+
+//pooling <--- kernal4
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer4[0] * poolingMap[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer4[1] * poolingMap[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer4[2] * poolingMap[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer4[3] * poolingMap[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer4[4] * poolingMap[(id.xy/3)];
+    pixel += KernalBuffer4[5] * poolingMap[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer4[6] * poolingMap[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer4[7] * poolingMap[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer4[8] * poolingMap[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer4[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap4[(id.xy/3)] = pixel;
+
+//poolingB <--- kernal4
+    pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer4[0] * poolingMapb[(id.xy/3) - int2(-1, 1)];
+    pixel += KernalBuffer4[1] * poolingMapb[(id.xy/3) - int2(0, 1)];
+    pixel += KernalBuffer4[2] * poolingMapb[(id.xy/3) - int2(1, 1)];
+
+	pixel += KernalBuffer4[3] * poolingMapb[(id.xy/3) - int2(-1, 0)];
+	pixel += KernalBuffer4[4] * poolingMapb[(id.xy/3)];
+    pixel += KernalBuffer4[5] * poolingMapb[(id.xy/3) - int2(1, 0)];
+	    
+	pixel += KernalBuffer4[6] * poolingMapb[(id.xy/3) - int2(-1, -1)];
+    pixel += KernalBuffer4[7] * poolingMapb[(id.xy/3) - int2(0, -1)];
+    pixel += KernalBuffer4[8] * poolingMapb[(id.xy/3) - int2(1, -1)];
+
+	pixel *= KernalBuffer4[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculated pixel
+    featureMap7[(id.xy/3)] = pixel;
+
+
+//Pooling Layer 2
+//featuremap2 --> poolingmap2
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap2[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap2[(id.xy/3)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap2[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap2[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap2[id.xy/9] = max(pixel,poolingMap2[id.xy/9]);
+
+//featuremap3 --> poolingmap3
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap3[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap3[(id.xy/3)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap3[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap3[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap3[id.xy/9] = max(pixel,poolingMap3[id.xy/9]);
+
+//featuremap4 --> poolingmap4
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap4[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap4[(id.xy/3)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap4[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap4[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap4[id.xy/9] = max(pixel,poolingMap4[id.xy/9]);
+
+//featuremap5 --> poolingmap5
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap5[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap5[(id.xy/3)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap5[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap5[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap5[id.xy/9] = max(pixel,poolingMap5[id.xy/9]);
+
+//featuremap6 --> poolingmap6
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap6[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap6[(id.xy/3)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap6[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap6[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap6[id.xy/9] = max(pixel,poolingMap6[id.xy/9]);
+
+//featuremap7 --> poolingmap7
+	pixel = float4(0, 0, 0, 0);
+
+    pixel = max(featureMap7[(id.xy/3) - int2(-1, 1)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(0, 1)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(1, 1)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(-1, 0)], pixel);
+	pixel = max(featureMap7[(id.xy/3)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(1, 0)], pixel);
+    pixel = max(featureMap7[(id.xy/3) - int2(-1, -1)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(0, -1)], pixel);
+	pixel = max(featureMap7[(id.xy/3) - int2(1, -1)], pixel);
+
+    // Set the calculated pixel
+    poolingMap7[id.xy/9] = max(pixel,poolingMap7[id.xy/9]);
+	///CNN DONE!
+}

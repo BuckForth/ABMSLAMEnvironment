@@ -1,0 +1,41 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+Texture2D<float4> ImageInput;
+
+StructuredBuffer<float> KernalBuffer;
+
+float2 flip;
+
+//https://github.com/G4ND44/computeShaderBlur/blob/master/Assets/Shaders/boxBlur.compute
+//https://www.youtube.com/watch?v=ub7JwtJjRSI
+//https://github.com/Firnox/ShaderStories-EdgeDetection
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float4 pixel = float4(0, 0, 0, 0);
+    // Convolution: ID
+    //   |  0  1  2  |
+    // 9 |  3  4  5  |
+    //   |  6  7  8  |
+    pixel += KernalBuffer[0] * ImageInput[id.xy - int2(-1, 1)];
+    pixel += KernalBuffer[1] * ImageInput[id.xy - int2(0, 1)];
+    pixel += KernalBuffer[2] * ImageInput[id.xy - int2(1, 1)];
+
+	pixel += KernalBuffer[3] * ImageInput[id.xy - int2(-1, 0)];
+	pixel += KernalBuffer[4] * ImageInput[id.xy];
+    pixel += KernalBuffer[5] * ImageInput[id.xy - int2(1, 0)];
+	    
+	pixel += KernalBuffer[6] * ImageInput[id.xy - int2(-1, -1)];
+    pixel += KernalBuffer[7] * ImageInput[id.xy - int2(0, -1)];
+    pixel += KernalBuffer[8] * ImageInput[id.xy - int2(1, -1)];
+
+	pixel *= KernalBuffer[9];
+    // Retain the original pixel alpha value.
+    pixel.a = ImageInput[id.xy].a;
+    // Set the calculate pixel
+    Result[id.xy] = pixel;
+}
